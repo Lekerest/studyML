@@ -1,4 +1,12 @@
-*
-!.gitignore
-!*.py
-!**/*.py
+# IDE директория PyCharm/IntelliJ
+.idea/
+
+# Виртуальное окружение Python
+.venv/
+venv/
+env/
+
+# Кеш Python (опционально, но рекомендуется)
+__pycache__/
+*.py[cod]
+*$py.class
