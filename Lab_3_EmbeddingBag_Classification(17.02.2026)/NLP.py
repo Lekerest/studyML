@@ -8,12 +8,15 @@ from datasets import load_dataset
 
 
 # =====================================================
-# 1) Device
+# 1) Выбор устройства
 # =====================================================
-if torch.backends.mps.is_available():
-    device = torch.device("mps")
-elif torch.cuda.is_available():
+# Если есть NVIDIA GPU → используем CUDA
+# Если Mac M-серия → используем MPS
+# Иначе fallback на CPU
+if torch.cuda.is_available():
     device = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
 else:
     device = torch.device("cpu")
 
@@ -21,18 +24,21 @@ print("Device:", device)
 
 
 # =====================================================
-# 2) Load AG News
+# 2) Загрузка датасета AG News
 # =====================================================
+# Датасет содержит 4 категории новостей:
+# World, Sports, Business, Sci/Tech
 dataset = load_dataset("ag_news")
 
 
 # =====================================================
-# 3) Tokenizer with BIGRAMS
+# 3) Токенизация и построение словаря
 # =====================================================
+# Токенизация: разбиваем текст на слова + добавляем биграммы
 def tokenizer(text: str):
     tokens = re.findall(r"\w+", text.lower())
 
-    # создаём биграммы
+    # добавляю биграммы, чтобы модель видела пары слов
     bigrams = [
         tokens[i] + "_" + tokens[i + 1]
         for i in range(len(tokens) - 1)
@@ -41,34 +47,42 @@ def tokenizer(text: str):
     return tokens + bigrams
 
 
-# считаем частоты
+# Считаем частоту слов по train-части
 counter = Counter()
 for text in dataset["train"]["text"]:
     counter.update(tokenizer(text))
 
 
-# словарь
+# Создаём словарь
+# <pad> — токен для выравнивания (на будущее)
+# <unk> — неизвестные слова
 vocab = {"<pad>": 0, "<unk>": 1}
 
+# Оставляю только слова, которые встречаются > 5 раз
 for word, freq in counter.items():
-    if freq > 5:  # убираем редкие слова
+    if freq > 5:
         vocab[word] = len(vocab)
 
 vocab_size = len(vocab)
 print("Vocab size:", vocab_size)
 
 
+# Преобразование текста в индексы
 def text_pipeline(text):
     return [vocab.get(token, vocab["<unk>"]) for token in tokenizer(text)]
 
 
+# Преобразование метки в int
 def label_pipeline(label):
     return int(label)
 
 
 # =====================================================
-# 4) Collate for EmbeddingBag
+# 4) Collate функция для EmbeddingBag
 # =====================================================
+# EmbeddingBag требует:
+# - один длинный тензор всех слов
+# - offsets — где начинается каждый текст
 def collate_batch(batch):
     label_list, text_list, offsets = [], [], [0]
 
@@ -88,17 +102,19 @@ def collate_batch(batch):
 
 
 # =====================================================
-# 5) Model
+# 5) Модель
 # =====================================================
 class TextClassificationModel(nn.Module):
     def __init__(self, vocab_size, embed_dim, num_class):
         super().__init__()
 
-        # усреднение эмбеддингов
+        # Каждый токен превращается в вектор размерности embed_dim
         self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, mode="mean")
 
+        # Dropout добавляю для регуляризации (чтобы модель не переобучалась)
         self.dropout = nn.Dropout(0.5)
 
+        # Линейный слой для классификации
         self.fc = nn.Linear(embed_dim, num_class)
 
     def forward(self, text, offsets):
@@ -108,9 +124,10 @@ class TextClassificationModel(nn.Module):
 
 
 num_class = 4
+
 model = TextClassificationModel(
     vocab_size=vocab_size,
-    embed_dim=256,
+    embed_dim=128,
     num_class=num_class
 ).to(device)
 
@@ -119,13 +136,13 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
 # =====================================================
-# 6) Training (2000 iterations)
+# 6) Обучение (1 эпоха)
 # =====================================================
 train_data = list(zip(dataset["train"]["label"], dataset["train"]["text"]))
 
 dataloader = DataLoader(
     train_data,
-    batch_size=64,
+    batch_size=32,
     shuffle=True,
     collate_fn=collate_batch
 )
@@ -144,14 +161,11 @@ for i, (labels, texts, offsets) in enumerate(dataloader):
     if i % 500 == 0:
         print(f"iter={i}, loss={loss.item():.4f}")
 
-    if i == 4000:
-        break
-
 print("\nTraining finished.")
 
 
 # =====================================================
-# 7) Prediction
+# 7) Предсказание
 # =====================================================
 ag_news_label = {
     0: "World",
@@ -173,8 +187,9 @@ def predict(text: str):
 
 
 # =====================================================
-# 8) Test examples
+# 8) Проверка на тестовых примерах
 # =====================================================
+
 test_examples = [
     ("The team won the championship after a late goal in the final minute.", "Sports"),
     ("Global stocks fell as investors worried about the new economic policy.", "Business"),
