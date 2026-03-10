@@ -1,5 +1,5 @@
 # 🏠 Lab 4 — Linear Regression with Gradient Descent on California Housing  
-**Дата:** 10_03_2026  
+**Дата:** 24_02_2026  
 
 ---
 
