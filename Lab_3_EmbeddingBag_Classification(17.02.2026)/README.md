@@ -1,4 +1,4 @@
-# 🧠Text Classification with EmbeddingBag  
+# 🧠 Lab 3 — Text Classification with EmbeddingBag  
 **Дата:** 17_02_2026  
 
 ---
