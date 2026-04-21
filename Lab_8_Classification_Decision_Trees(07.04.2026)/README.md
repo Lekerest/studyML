@@ -1,4 +1,4 @@
-# Lab 6 — Classification with Decision Trees
+# Lab 8 — Classification with Decision Trees
 07_04_2026
 
 ## Цель работы
