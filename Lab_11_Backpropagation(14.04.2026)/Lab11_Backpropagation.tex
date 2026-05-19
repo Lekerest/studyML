@@ -1,0 +1,251 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+
+\setmainlanguage{russian}
+\setmainfont{CMU Serif}
+\newfontfamily\cyrillicfont{CMU Serif}
+
+\geometry{
+    left=25mm,
+    right=15mm,
+    top=20mm,
+    bottom=20mm
+}
+
+\begin{document}
+
+\begin{center}
+    \Large\textbf{Лабораторная работа 11}\\
+    \large\textbf{Прямое и обратное распространение}\\
+    \vspace{0.5cm}
+    28 апреля 2026 г.
+\end{center}
+
+\section*{Цель работы}
+
+Цель работы --- найти выражения для производных ошибки по входным сигналам $x_1$ и $x_2$ в простой нейронной сети с использованием правила обратного распространения ошибки.
+
+\section*{Описание нейронной сети}
+
+На вход сети подаются два скалярных значения:
+
+\[
+x_1, \quad x_2
+\]
+
+Каждый вход проходит через сигмоидную функцию:
+
+\[
+i_1 = \sigma(x_1)
+\]
+
+\[
+i_2 = \sigma(x_2)
+\]
+
+Сигмоидная функция имеет вид:
+
+\[
+\sigma(x) = \frac{1}{1 + e^{-x}}
+\]
+
+Производная сигмоидной функции:
+
+\[
+\sigma'(x) = \sigma(x)(1 - \sigma(x))
+\]
+
+Далее выходы сигмоидного слоя проходят через слои $min$ и $max$:
+
+\[
+o_{min} = \min(i_1, i_2)
+\]
+
+\[
+o_{max} = \max(i_1, i_2)
+\]
+
+На последнем слое значения складываются:
+
+\[
+y = o_{min} + o_{max}
+\]
+
+Необходимо выразить:
+
+\[
+\frac{\partial E}{\partial x_1}
+\quad \text{и} \quad
+\frac{\partial E}{\partial x_2}
+\]
+
+через ошибку, которая приходит с выхода сети:
+
+\[
+\frac{\partial E}{\partial y}
+\]
+
+\section*{Упрощение выражения для выхода}
+
+Для двух чисел сумма минимального и максимального значения равна сумме этих чисел:
+
+\[
+\min(i_1, i_2) + \max(i_1, i_2) = i_1 + i_2
+\]
+
+Следовательно, выход сети можно записать так:
+
+\[
+y = i_1 + i_2
+\]
+
+Подставим значения $i_1$ и $i_2$:
+
+\[
+y = \sigma(x_1) + \sigma(x_2)
+\]
+
+\section*{Производная по первому входу}
+
+Пусть ошибка, которая приходит с выхода сети, равна:
+
+\[
+\frac{\partial E}{\partial y}
+\]
+
+Найдем производную ошибки по входу $x_1$.
+
+Используем правило цепочки:
+
+\[
+\frac{\partial E}{\partial x_1}
+=
+\frac{\partial E}{\partial y}
+\cdot
+\frac{\partial y}{\partial x_1}
+\]
+
+Так как:
+
+\[
+y = \sigma(x_1) + \sigma(x_2)
+\]
+
+то производная по $x_1$ равна:
+
+\[
+\frac{\partial y}{\partial x_1}
+=
+\sigma'(x_1)
+\]
+
+Подставим производную сигмоиды:
+
+\[
+\frac{\partial y}{\partial x_1}
+=
+\sigma(x_1)(1 - \sigma(x_1))
+\]
+
+Тогда:
+
+\[
+\frac{\partial E}{\partial x_1}
+=
+\frac{\partial E}{\partial y}
+\cdot
+\sigma(x_1)(1 - \sigma(x_1))
+\]
+
+\section*{Производная по второму входу}
+
+Аналогично найдем производную ошибки по входу $x_2$.
+
+Используем правило цепочки:
+
+\[
+\frac{\partial E}{\partial x_2}
+=
+\frac{\partial E}{\partial y}
+\cdot
+\frac{\partial y}{\partial x_2}
+\]
+
+Так как:
+
+\[
+y = \sigma(x_1) + \sigma(x_2)
+\]
+
+то производная по $x_2$ равна:
+
+\[
+\frac{\partial y}{\partial x_2}
+=
+\sigma'(x_2)
+\]
+
+Подставим производную сигмоиды:
+
+\[
+\frac{\partial y}{\partial x_2}
+=
+\sigma(x_2)(1 - \sigma(x_2))
+\]
+
+Тогда:
+
+\[
+\frac{\partial E}{\partial x_2}
+=
+\frac{\partial E}{\partial y}
+\cdot
+\sigma(x_2)(1 - \sigma(x_2))
+\]
+
+\section*{Итоговые формулы}
+
+Итоговая формула для первого входа:
+
+\[
+\boxed{
+\frac{\partial E}{\partial x_1}
+=
+\frac{\partial E}{\partial y}
+\cdot
+\sigma(x_1)(1 - \sigma(x_1))
+}
+\]
+
+Итоговая формула для второго входа:
+
+\[
+\boxed{
+\frac{\partial E}{\partial x_2}
+=
+\frac{\partial E}{\partial y}
+\cdot
+\sigma(x_2)(1 - \sigma(x_2))
+}
+\]
+
+\section*{Вывод}
+
+В ходе работы было выполнено обратное распространение ошибки через простую нейронную сеть.
+
+Входные значения $x_1$ и $x_2$ сначала проходят через сигмоидную функцию, после чего попадают в слои $min$ и $max$.
+
+Так как сумма значений $min$ и $max$ для двух чисел равна сумме этих чисел, выход сети можно упростить:
+
+\[
+y = \sigma(x_1) + \sigma(x_2)
+\]
+
+Поэтому производные ошибки по входам $x_1$ и $x_2$ выражаются через производную сигмоидной функции и ошибку, приходящую с выхода сети.
+
+\end{document}
